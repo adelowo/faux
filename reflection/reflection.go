@@ -60,6 +60,10 @@ func StructAndEmbeddedTypes(elem interface{}) (reflect.Type, []reflect.Type, err
 		tl = tl.Elem()
 	}
 
+	if tl.Kind() == reflect.Interface {
+		tl = tl.Elem()
+	}
+
 	if tl.Kind() != reflect.Struct {
 		return nil, nil, ErrNotStruct
 	}
