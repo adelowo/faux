@@ -54,13 +54,9 @@ func FuncType(elem interface{}) (reflect.Type, error) {
 // StructAndEmbeddedTypes returns the type of the giving element and a slice of
 // all composed types.
 func StructAndEmbeddedTypes(elem interface{}) (reflect.Type, []reflect.Type, error) {
-	tl := reflect.TypeOf(elem)
+	tl := reflect.ValueOf(elem)
 
 	if tl.Kind() == reflect.Ptr {
-		tl = tl.Elem()
-	}
-
-	if tl.Kind() == reflect.Interface {
 		tl = tl.Elem()
 	}
 
@@ -71,11 +67,11 @@ func StructAndEmbeddedTypes(elem interface{}) (reflect.Type, []reflect.Type, err
 	var embeded []reflect.Type
 
 	for ind := 0; ind < tl.NumField(); ind++ {
-		item := tl.Field(ind).Type
+		item := tl.Field(ind).Type()
 		embeded = append(embeded, item)
 	}
 
-	return tl, embeded, nil
+	return tl.Type(), embeded, nil
 }
 
 var internalTypes = []string{
