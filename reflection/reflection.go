@@ -80,9 +80,16 @@ var internalTypes = []string{
 	"rune", "byte",
 }
 
+// FieldType defines a struct which holds details the name and package which
+// a giving field belongs to.
+type FieldType struct {
+	TypeName string `json:"field_type"`
+	Pkg      string `json:"pkg"`
+}
+
 // StructAndEmbeddedTypeNames returns the name and field names of the provided
 // elem which must be a struct.
-func StructAndEmbeddedTypeNames(elem interface{}) (string, []string, error) {
+func StructAndEmbeddedTypeNames(elem interface{}) (FieldType, []FieldType, error) {
 	tl := reflect.TypeOf(elem)
 
 	if tl.Kind() == reflect.Ptr {
@@ -94,10 +101,14 @@ func StructAndEmbeddedTypeNames(elem interface{}) (string, []string, error) {
 	}
 
 	if tl.Kind() != reflect.Struct {
-		return "", nil, ErrNotStruct
+		return FieldType{}, nil, ErrNotStruct
 	}
 
-	var embeded []string
+	var item FieldType
+	item.TypeName = tl.Name()
+	item.Pkg = tl.PkgPath()
+
+	var embeded []FieldType
 
 	{
 	fieldLoop:
@@ -111,24 +122,30 @@ func StructAndEmbeddedTypeNames(elem interface{}) (string, []string, error) {
 			}
 
 			if item.Name() == "" {
-				if item.Kind() == reflect.Slice || item.Kind() == reflect.Array {
+				if item.Kind() == reflect.Slice || item.Kind() == reflect.Array || item.Kind() == reflect.Interface {
 					for _, except := range internalTypes {
 						if except == item.Elem().Name() {
 							continue fieldLoop
 						}
 					}
 
-					embeded = append(embeded, item.Elem().Name())
+					embeded = append(embeded, FieldType{
+						TypeName: item.Elem().Name(),
+						Pkg:      item.Elem().PkgPath(),
+					})
 				}
 
 				continue
 			}
 
-			embeded = append(embeded, item.Name())
+			embeded = append(embeded, FieldType{
+				TypeName: item.Name(),
+				Pkg:      item.PkgPath(),
+			})
 		}
 	}
 
-	return tl.Name(), embeded, nil
+	return item, embeded, nil
 }
 
 // HasArgumentSize return true/false to indicate if the function type has the
