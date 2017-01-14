@@ -89,9 +89,13 @@ func StructAndEmbeddedTypeNames(elem interface{}) (string, []string, error) {
 		tl = tl.Elem()
 	}
 
-	if tl.Kind() != reflect.Struct {
-		return "", nil, ErrNotStruct
-	}
+	// if tl.Kind() != reflect.Struct {
+	// 	if tl.Kind() == reflect.Interface {
+	//
+	// 	}
+	//
+	// 	return "", nil, ErrNotStruct
+	// }
 
 	var embeded []string
 
