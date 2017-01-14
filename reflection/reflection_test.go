@@ -31,6 +31,17 @@ func (m *monster) Speak() string {
 	return "Raaaaaaarggg!"
 }
 
+func get(t *testing.T, sm speaker) {
+	name, embedded, err := reflection.StructAndEmbeddedTypeNames(sm)
+	if err != nil {
+		t.Fatalf("\t%s\tShould be able to retrieve field names arguments lists: %s", failedMark, err)
+	} else {
+		t.Logf("\tName: %s\n", name)
+		t.Logf("\tFields: %+q\n", embedded)
+		t.Logf("\t%s\tShould be able to retrieve function arguments lists", succeedMark)
+	}
+}
+
 // TestGetArgumentsType validates reflection API GetArgumentsType functions
 // results.
 func TestGetArgumentsType(t *testing.T) {
@@ -54,20 +65,9 @@ func TestGetArgumentsType(t *testing.T) {
 		t.Logf("\t%s\tShould be able to retrieve function arguments lists", succeedMark)
 	}
 
-	var speak speaker
-	speak = &monster{Name: "Bob"}
-
-	name, embedded, err = reflection.StructAndEmbeddedTypeNames(speak)
-	if err != nil {
-		t.Fatalf("\t%s\tShould be able to retrieve field names arguments lists: %s", failedMark, err)
-	} else {
-		t.Logf("\tName: %s\n", name)
-		t.Logf("\tFields: %+q\n", embedded)
-		t.Logf("\t%s\tShould be able to retrieve function arguments lists", succeedMark)
-	}
+	get(t, &monster{Name: "Bob"})
 
 	newVals := reflection.MakeArgumentsValues(args)
-
 	if nlen, alen := len(newVals), len(args); nlen != alen {
 		t.Fatalf("\t%s\tShould have matching new values lists for arguments", failedMark)
 	}
