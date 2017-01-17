@@ -222,6 +222,24 @@ func MatchFuncArgumentTypeWithValues(elem interface{}, vals []reflect.Value) int
 	return -1
 }
 
+// StrictCanSetForType checks if a val reflect.Type can be used for the target type.
+// It returns true/false if value matches the expected type and another true/false
+// if the value can be converted to the expected type.
+// Difference between this version and the other CanSet is that, it returns
+// only true/false for the Assignability of the types and not based on the Assignability
+// and convertibility.
+func StrictCanSetForType(target, val reflect.Type) (canSet bool, mustConvert bool) {
+	if val.AssignableTo(target) {
+		canSet = true
+	}
+
+	if val.ConvertibleTo(target) {
+		mustConvert = true
+	}
+
+	return
+}
+
 // CanSetForType checks if a val reflect.Type can be used for the target type.
 // It returns true bool, where the first returns if the value can be used and if
 // it must be converted into the type first.
