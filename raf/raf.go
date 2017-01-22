@@ -118,6 +118,8 @@ func RequestAnimationFrame(r Mux, f ...func()) int {
 			}
 
 			go func() {
+				newticker.fn(0.01)
+
 				for {
 					if newticker.kill {
 						break
