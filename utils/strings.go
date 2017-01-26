@@ -1,12 +1,42 @@
 package utils
 
 import (
+	"errors"
 	"fmt"
 	"math/rand"
 	"regexp"
 	"strconv"
 	"time"
 )
+
+var digits = regexp.MustCompile("\\d+")
+var chars = regexp.MustCompile("\\D+")
+
+// GetDuration returns the giving duration measure from the provided string value.
+func GetDuration(ts string) (time.Duration, error) {
+	value := chars.ReplaceAllString(ts, "")
+	measure := digits.ReplaceAllString(ts, "")
+
+	valInt, err := strconv.Atoi(value)
+	if err != nil {
+		return 0, err
+	}
+
+	switch measure {
+	case "ns":
+		return time.Duration(valInt) * time.Nanosecond, nil
+	case "ms":
+		return time.Duration(valInt) * time.Millisecond, nil
+	case "s":
+		return time.Duration(valInt) * time.Second, nil
+	case "m":
+		return time.Duration(valInt) * time.Minute, nil
+	case "h":
+		return time.Duration(valInt) * time.Hour, nil
+	default:
+		return 0, errors.New("Invalid Measure for duration")
+	}
+}
 
 // StringMatcher defines a function type to match a giving string against.
 type StringMatcher func(string) bool
