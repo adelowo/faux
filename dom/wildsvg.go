@@ -85,11 +85,8 @@ func (svg *SVGPathEaser) Ease(t float64) float64 {
 }
 
 // Stats returns the giving time details taken to generate the samples.
-func (svg *SVGPathEaser) Stats() (delta time.Duration, start time.Time, end time.Time) {
-	delta = svg.delta
-	start = svg.start
-	end = svg.end
-	return
+func (svg *SVGPathEaser) Stats() (time.Duration, time.Time, time.Time) {
+	return svg.delta, svg.start, svg.end
 }
 
 // generateSampling the samplings based on the sampling size from the
