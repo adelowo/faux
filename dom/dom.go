@@ -200,23 +200,16 @@ func Vendorize(u string) []string {
 	return v
 }
 
+var unitRex = regexp.MustCompile("([\\+\\-]?[0-9|auto\\.]+)(%|px|pt|em|rem|in|cm|mm|ex|pc|vw|vh|deg)?")
+
 // Unit returns a valid unit type in the browser, if the supplied unit is
 // standard then it is return else 'px' is returned as default.
 func Unit(u string) string {
-	switch u {
-	case "rem":
-		return u
-	case "em":
-		return u
-	case "px":
-		return u
-	case "%":
-		return u
-	case "vw":
-		return u
-	default:
-		return "px"
+	if vals := unitRex.FindStringSubmatch(u); len(vals) > 1 {
+		return vals[1]
 	}
+
+	return ""
 }
 
 // doubleString doubles the giving string.

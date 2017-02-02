@@ -6,10 +6,18 @@ import (
 	"math/rand"
 	"regexp"
 	"strconv"
+	"strings"
 	"time"
 )
 
 var strs = regexp.MustCompile("([a-z])([A-Z])")
+
+// StringToHyphens returns the value of the string hypened.
+func StringToHyphens(s string) string {
+	matches := strs.FindStringSubmatch(s)
+	return strings.Join(matches, "-")
+}
+
 var digits = regexp.MustCompile("\\d+")
 var chars = regexp.MustCompile("\\D+")
 
