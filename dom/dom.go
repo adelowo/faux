@@ -4,10 +4,10 @@ import (
 	"errors"
 	"fmt"
 	"regexp"
-	"strconv"
 	"strings"
 
 	"github.com/gopherjs/gopherjs/js"
+	"github.com/influx6/faux/utils"
 	"honnef.co/go/js/dom"
 )
 
@@ -185,89 +185,6 @@ func GetComputedStyleMap(elem dom.Element, ps string) (ComputedStyleMap, error) 
 	return styleMap, nil
 }
 
-//==============================================================================
-
-// colorReg defines a regexp for matching rgb/rgba header content.
-var colorReg = regexp.MustCompile("[rgb|rgba]\\(([\\d\\.,\\s]+)\\)")
-
-// IsRGBFormat returns true/false if the giving string is a rgb/rgba format data.
-func IsRGBFormat(c string) bool {
-	return colorReg.MatchString(c)
-}
-
-// rgbHeader defines a regexp for matching rgb/rgba header content.
-var rgbHeader = regexp.MustCompile("rgb\\(([\\d\\.,\\s]+)\\)")
-
-// IsRGB returns true/false if the giving string is a rgb format data.
-func IsRGB(c string) bool {
-	return rgbHeader.MatchString(c)
-}
-
-// rgbaHeader defines a regexp for matching rgb/rgba header content.
-var rgbaHeader = regexp.MustCompile("rgba\\(([\\d\\.,\\s]+)\\)")
-
-// IsRGBA returns true/false if the giving string is a rgba format data.
-func IsRGBA(c string) bool {
-	return rgbaHeader.MatchString(c)
-}
-
-// ParseRGB pulls out the rgb/rgba information from a rgba(9,9,9,9) type
-// formatted string.
-func ParseRGB(rgbData string) (int, int, int, float64) {
-	subs := colorReg.FindStringSubmatch(rgbData)
-
-	if len(subs) < 2 {
-		return 0, 0, 0, 0
-	}
-
-	rc := strings.Split(subs[1], ",")
-
-	var r, g, b int
-	var alpha float64
-
-	r = ParseInt(rc[0])
-	g = ParseInt(rc[1])
-	b = ParseInt(rc[2])
-
-	if len(rc) > 3 {
-		alpha = ParseFloat(rc[3])
-	} else {
-		alpha = 1
-	}
-
-	return r, g, b, alpha
-}
-
-// HexToRGB turns a hexademicmal color into rgba format.
-// Returns the read, green and blue values as int.
-func HexToRGB(hex string) (red, green, blue int) {
-	if strings.HasPrefix(hex, "#") {
-		hex = strings.TrimPrefix(hex, "#")
-	}
-
-	// We are dealing with a 3 string hex.
-	if len(hex) < 6 {
-		parts := strings.Split(hex, "")
-		red = ParseIntBase16(doubleString(parts[0]))
-		green = ParseIntBase16(doubleString(parts[1]))
-		blue = ParseIntBase16(doubleString(parts[2]))
-		return
-	}
-
-	red = ParseIntBase16(hex[0:2])
-	green = ParseIntBase16(hex[2:4])
-	blue = ParseIntBase16(hex[4:6])
-
-	return
-}
-
-// HexToRGBA turns a hexademicmal color into rgba format.
-// Alpha values ranges from 0-100
-func HexToRGBA(hex string, alpha int) string {
-	r, g, b := HexToRGB(hex)
-	return fmt.Sprintf("rgba(%d,%d,%d,%.2f)", r, g, b, float64(alpha)/100)
-}
-
 // vendorTags provides a lists of different browser specific vendor names.
 var vendorTags = []string{"moz", "webki", "O", "ms"}
 
@@ -341,7 +258,7 @@ func ToRotation(data string) (*Rotation, error) {
 	ts := strings.Split(rotationMatch.FindStringSubmatch(data)[1], ",")
 
 	var t Rotation
-	t.Angle = ParseFloat(ts[0])
+	t.Angle = utils.ParseFloat(ts[0])
 
 	return &t, nil
 }
@@ -375,12 +292,12 @@ func ToSkew(data string) (*Skew, error) {
 	var t Skew
 
 	if strings.HasSuffix(data, "Y") {
-		t.Y = ParseFloat(ts[0])
+		t.Y = utils.ParseFloat(ts[0])
 	} else if strings.Contains(data, "X") {
-		t.X = ParseFloat(ts[0])
+		t.X = utils.ParseFloat(ts[0])
 	} else {
-		t.X = ParseFloat(ts[0])
-		t.Y = ParseFloat(ts[1])
+		t.X = utils.ParseFloat(ts[0])
+		t.Y = utils.ParseFloat(ts[1])
 	}
 
 	return &t, nil
@@ -414,12 +331,12 @@ func ToScale(data string) (*Scale, error) {
 	var t Scale
 
 	if strings.HasSuffix(data, "Y") {
-		t.Y = ParseFloat(ts[0])
+		t.Y = utils.ParseFloat(ts[0])
 	} else if strings.Contains(data, "X") {
-		t.X = ParseFloat(ts[0])
+		t.X = utils.ParseFloat(ts[0])
 	} else {
-		t.X = ParseFloat(ts[0])
-		t.Y = ParseFloat(ts[1])
+		t.X = utils.ParseFloat(ts[0])
+		t.Y = utils.ParseFloat(ts[1])
 	}
 
 	return &t, nil
@@ -449,7 +366,7 @@ func ToPerspective(data string) (*Perspective, error) {
 	ts := strings.Split(perspectiveMatch.FindStringSubmatch(data)[1], ",")
 
 	var t Perspective
-	t.Range = ParseFloat(ts[0])
+	t.Range = utils.ParseFloat(ts[0])
 
 	return &t, nil
 }
@@ -482,12 +399,12 @@ func ToTranslation(data string) (*Translation, error) {
 	var t Translation
 
 	if strings.HasSuffix(data, "Y") {
-		t.Y = ParseFloat(ts[0])
+		t.Y = utils.ParseFloat(ts[0])
 	} else if strings.Contains(data, "X") {
-		t.X = ParseFloat(ts[0])
+		t.X = utils.ParseFloat(ts[0])
 	} else {
-		t.X = ParseFloat(ts[0])
-		t.Y = ParseFloat(ts[1])
+		t.X = utils.ParseFloat(ts[0])
+		t.Y = utils.ParseFloat(ts[1])
 	}
 
 	return &t, nil
@@ -539,43 +456,15 @@ func ToMatrix2D(data string) (*Matrix, error) {
 	}
 
 	m := Matrix{
-		ScaleX:    ParseFloat(ms[0]),
-		RotationX: ParseFloat(ms[1]),
-		ScaleY:    ParseFloat(ms[2]),
-		RotationY: ParseFloat(ms[3]),
-		PositionX: ParseFloat(ms[4]),
-		PositionY: ParseFloat(ms[5]),
+		ScaleX:    utils.ParseFloat(ms[0]),
+		RotationX: utils.ParseFloat(ms[1]),
+		ScaleY:    utils.ParseFloat(ms[2]),
+		RotationY: utils.ParseFloat(ms[3]),
+		PositionX: utils.ParseFloat(ms[4]),
+		PositionY: utils.ParseFloat(ms[5]),
 	}
 
 	return &m, nil
-}
-
-//==============================================================================
-
-// nodigits defines a regexp for matching non-digits.
-var nodigits = regexp.MustCompile("[^\\d\\.]+")
-
-// ParseFloat parses a string into a float if fails returns the default value 0.
-func ParseFloat(fl string) float64 {
-	fll, _ := strconv.ParseFloat(DigitsOnly(fl), 64)
-	return fll
-}
-
-// ParseInt parses a string into a int if fails returns the default value 0.
-func ParseInt(fl string) int {
-	fll, _ := strconv.Atoi(DigitsOnly(fl))
-	return fll
-}
-
-// ParseIntBase16 parses a string into a int using base16.
-func ParseIntBase16(fl string) int {
-	fll, _ := strconv.ParseInt(fl, 16, 64)
-	return int(fll)
-}
-
-// DigitsOnly removes all non-digits characters in a string.
-func DigitsOnly(fl string) string {
-	return nodigits.ReplaceAllString(fl, "")
 }
 
 //==============================================================================

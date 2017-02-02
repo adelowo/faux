@@ -6,6 +6,7 @@ import (
 
 	"github.com/go-humble/detect"
 	"github.com/gopherjs/gopherjs/js"
+	"github.com/influx6/faux/utils"
 	"honnef.co/go/js/dom"
 )
 
@@ -107,7 +108,7 @@ func PageBox() (float64, float64) {
 
 	top := cursor.Get(topScrollAttr)
 	left := cursor.Get(leftScrollAttr)
-	return ParseFloat(top.String()), ParseFloat(left.String())
+	return utils.ParseFloat(top.String()), utils.ParseFloat(left.String())
 }
 
 // ClientBox returns the offset of the current page client box.
@@ -119,7 +120,7 @@ func ClientBox() (float64, float64) {
 		return 0, 0
 	}
 
-	return ParseFloat(top.String()), ParseFloat(left.String())
+	return utils.ParseFloat(top.String()), utils.ParseFloat(left.String())
 }
 
 // rootName defines a regexp for matching the string to either be body/html.
@@ -145,12 +146,12 @@ func Position(elem dom.Element) (float64, float64) {
 
 		pBorderTopObject, err = GetProp(parent, "style.borderTopWidth")
 		if err == nil {
-			pBorderTop = ParseFloat(pBorderTopObject.String())
+			pBorderTop = utils.ParseFloat(pBorderTopObject.String())
 		}
 
 		pBorderLeftObject, err = GetProp(parent, "style.borderLeftWidth")
 		if err == nil {
-			pBorderLeft = ParseFloat(pBorderLeftObject.String())
+			pBorderLeft = utils.ParseFloat(pBorderLeftObject.String())
 		}
 
 		parentTop += pBorderTop
@@ -161,12 +162,12 @@ func Position(elem dom.Element) (float64, float64) {
 
 	marginTopObject, err := GetComputedStyleValueWith(css, "margin-top")
 	if err == nil {
-		marginTop = ParseFloat(marginTopObject.String())
+		marginTop = utils.ParseFloat(marginTopObject.String())
 	}
 
 	marginLeftObject, err := GetComputedStyleValueWith(css, "margin-left")
 	if err == nil {
-		marginLeft = ParseFloat(marginLeftObject.String())
+		marginLeft = utils.ParseFloat(marginLeftObject.String())
 	}
 
 	elemTop, elemLeft := Offset(elem)
