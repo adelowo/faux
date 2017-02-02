@@ -2,8 +2,20 @@ package utils
 
 import (
 	"crypto/rand"
+	"math"
+	mrand "math/rand"
 	"strings"
 )
+
+// RandomInt returns a random number between the provided min-max range.
+func RandomInt(min, max int64) int64 {
+	return int64(math.Floor(float64(mrand.Int63()*((max-min)+1)))) + min
+}
+
+// RandomFloat returns a random number between the provided min-max range.
+func RandomFloat(min, max float64) float64 {
+	return math.Floor(mrand.Float64()*((max-min)+1)) + min
+}
 
 // RandString generates a set of random numbers of a set length
 func RandString(n int) string {

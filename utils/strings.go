@@ -9,6 +9,7 @@ import (
 	"time"
 )
 
+var strs = regexp.MustCompile("([a-z])([A-Z])")
 var digits = regexp.MustCompile("\\d+")
 var chars = regexp.MustCompile("\\D+")
 
