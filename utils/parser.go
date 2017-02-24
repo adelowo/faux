@@ -168,9 +168,16 @@ func (blockMessage) SplitMultiplex(msg []byte) ([][]byte, error) {
 		return nil, errors.New("Expected message block/blocks should be enclosed in '{','}'")
 	}
 
+	i := -1
+
 	{
 	blockLoop:
-		for i := 0; i < msgLen; i++ {
+		for {
+			if msg == nil || len(msg) == 0 {
+				break blockLoop
+			}
+
+			i++
 			item := msg[i]
 
 			switch item {
@@ -197,6 +204,7 @@ func (blockMessage) SplitMultiplex(msg []byte) ([][]byte, error) {
 				continue
 
 			case '{':
+				// fmt.Printf("BEGINSTART: %+q -> %+q : %+q \n", item, block, msg)
 				if messageStart {
 					block = append(block, item)
 					continue
@@ -207,6 +215,8 @@ func (blockMessage) SplitMultiplex(msg []byte) ([][]byte, error) {
 				continue
 
 			case '}':
+				// fmt.Printf("ClOSESTART: %+q -> %+q : %+q \n", item, block, msg)
+
 				if !messageStart {
 					return nil, errors.New("Invalid Start of block")
 				}
@@ -222,12 +232,33 @@ func (blockMessage) SplitMultiplex(msg []byte) ([][]byte, error) {
 					return nil, errors.New("Invalid new Block start")
 				}
 
+				// fmt.Printf("MSG: %+q -> %+q : %+q\n", msg, block, item)
+				// fmt.Printf("MSGD: %+q -> %+q : %+q : %+q\n", msg, msg[i+1:i+2], msg[i+1:i+3], msg[i+3:])
+
 				if msg[i+1] == ':' && msg[i+2] == '{' {
 					block = append(block, item)
 					blocks = append(blocks, block)
 					block = nil
 					messageStart = false
 					continue
+				}
+
+				// We are probably facing a new section without
+				if item == '}' && bytes.Equal(msg[i+1:i+3], ctrlLine) {
+					block = append(block, item)
+					blocks = append(blocks, block)
+					block = nil
+					messageStart = false
+
+					msg = msg[i+3:]
+					i = -1
+					// fmt.Printf("MSGOD: %+q -> %+q : %+q \n", item, block, msg)
+
+					if len(msg) == 0 {
+						break blockLoop
+					}
+
+					continue blockLoop
 				}
 
 				ctrl := msg[i+1 : msgLen]
@@ -264,6 +295,61 @@ func (blockMessage) SplitMultiplex(msg []byte) ([][]byte, error) {
 }
 
 //==============================================================================
+
+// MakeMessage wraps each byte slice in the multiple byte slice with with
+// given header returning a single byte slice joined with a colon : symbol.
+func MakeMessage(header string, msgs ...string) []byte {
+	var msg []byte
+
+	if msgs != nil {
+		var bmsg [][]byte
+
+		for _, msg := range msgs {
+			bmsg = append(bmsg, []byte(msg))
+		}
+
+		msg = WrapBlockParts(bmsg)
+	}
+
+	return WrapCTRLLine(WrapBlock(WrapWithHeader([]byte(header), msg)))
+}
+
+// MakeByteMessage wraps each byte slice in the multiple byte slice with with
+// given header returning a single byte slice joined with a colon : symbol.
+func MakeByteMessage(header []byte, msgs ...[]byte) []byte {
+	var msg []byte
+
+	if msgs != nil {
+		msg = WrapBlockParts(msgs)
+	}
+
+	return WrapCTRLLine(WrapBlock(WrapWithHeader(header, msg)))
+}
+
+// MakeMessageGroup joins the provided message strings with a ':' character.
+func MakeMessageGroup(msgs ...string) []byte {
+	var bmsg [][]byte
+
+	for _, msg := range msgs {
+		bmsg = append(bmsg, []byte(msg))
+	}
+
+	return WrapCTRLLine(bytes.Join(bmsg, colonSlice))
+}
+
+// MakeByteMessageGroup joins series of messages with a ':' character.
+func MakeByteMessageGroup(msg ...[]byte) []byte {
+	return WrapCTRLLine(bytes.Join(msg, colonSlice))
+}
+
+// WrapCTRLLine wraps the giving message with a \r\n ending if not already there.
+func WrapCTRLLine(msg []byte) []byte {
+	if bytes.HasSuffix(msg, ctrlLine) {
+		return msg
+	}
+
+	return append(msg, ctrlLine...)
+}
 
 // WrapBlock wraps a message in a opening and closing bracket.
 func WrapBlock(msg []byte) []byte {
