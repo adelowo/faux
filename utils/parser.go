@@ -355,6 +355,18 @@ func MakeByteMessageGroup(msg ...[]byte) []byte {
 	return WrapCTRLLine(bytes.Join(msg, colonSlice))
 }
 
+// JoinMessages joins all the provided messages details returning a single byte
+// slice.
+func JoinMessages(mgs ...Message) []byte {
+	var bm [][]byte
+
+	for _, msg := range mgs {
+		bm = append(bm, WrapResponseBlock(msg.Command, msg.Data...))
+	}
+
+	return bytes.Join(bm, colonSlice)
+}
+
 // WrapCTRLLine wraps the giving message with a \r\n ending if not already there.
 func WrapCTRLLine(msg []byte) []byte {
 	if bytes.HasSuffix(msg, ctrlLine) {
