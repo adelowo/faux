@@ -3,6 +3,7 @@ package utils
 import (
 	"bytes"
 	"errors"
+	"fmt"
 )
 
 var (
@@ -37,6 +38,11 @@ type Messages []Message
 type Message struct {
 	Command []byte   `json:"command"`
 	Data    [][]byte `json:"data"`
+}
+
+// String returns a stringified version of the giving message.
+func (m Message) String() string {
+	return fmt.Sprintf("{Command: %+q, Data: %+q}", m.Command, m.Data)
 }
 
 // BlockParser defines a package level parser using the blockMessage specification.
