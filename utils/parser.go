@@ -3,7 +3,6 @@ package utils
 import (
 	"bytes"
 	"errors"
-	"fmt"
 )
 
 var (
@@ -75,7 +74,7 @@ func (b blockMessage) Parse(msg []byte) ([]Message, error) {
 		return nil, err
 	}
 
-	fmt.Printf("DBLOCKS: %+q\n", blocks)
+	// fmt.Printf("DBLOCKS: %+q\n", blocks)
 
 	for _, block := range blocks {
 		if len(block) == 0 {
