@@ -160,11 +160,6 @@ func (blockMessage) SplitParts(msg []byte) [][]byte {
 // breaking patterns of message packs into their seperate parts.
 // multiplex message: `{A|U|Runner}:{+SUBS|R|}\r\n` => []{[]byte("A|U|Runner}\r\n"), []byte("+SUBS|R|bucks\r\n")}.
 func (blockMessage) SplitMultiplex(msg []byte) ([][]byte, error) {
-	fmt.Printf("D: %+q\n", msg)
-	// if bytes.Equal(msg, ctrlLine) {
-	// 	return nil, nil
-	// }
-
 	var blocks [][]byte
 
 	var block []byte
