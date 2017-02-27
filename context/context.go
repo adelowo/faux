@@ -3,6 +3,7 @@
 package context
 
 import (
+	gcontext "context"
 	"sync"
 	"time"
 )
@@ -105,6 +106,9 @@ type Context interface {
 	// Set adds a key and value pair into the context store.
 	Set(key interface{}, value interface{})
 
+	// SetParent adds a key and value pair into the context store.
+	SetParent(key interface{}, value interface{})
+
 	// // SetParent adds a key and value pair into the context store.
 	// SetParent(key interface{}, value interface{})
 
@@ -127,7 +131,25 @@ type CancelableContext interface {
 	Cancel()
 }
 
-// New returns a new context instance.
+// GoogleContext defines a interface which exposes the Err method for the google
+// context.Err() method in the google context package.
+type GoogleContext interface {
+	Context
+
+	// Err returns the giving error provided by the context for why it's closed.
+	Err() error
+}
+
+// CancelableGoogleContext defines a interface which exposes the cancel method for the canceling
+// a google context object from the google context package.
+type CancelableGoogleContext interface {
+	GoogleContext
+
+	//Cancel cancels out the timer setup to nil out contexts internal store.
+	Cancel()
+}
+
+// New returns a new context object that meets the CancelableContext interface.
 func New() CancelableContext {
 	cl := context{
 		fields:    nilPair,
@@ -136,7 +158,150 @@ func New() CancelableContext {
 	return &cl
 }
 
+// NewGoogleContext returns a new context object that meets the CancelableContext interface.
+func NewGoogleContext(ctx gcontext.Context) CancelableContext {
+	var gc googleContext
+
+	ctx, canceller := gcontext.WithCancel(ctx)
+	rem, _ := ctx.Deadline()
+
+	gc.ctx = ctx
+	gc.deadline = rem
+	gc.canceller = canceller
+
+	return &gc
+}
+
 //==============================================================================
+
+// googleContext implements a decorator for googles context package.
+type googleContext struct {
+	cl        sync.Mutex
+	ctx       gcontext.Context
+	deadline  time.Time
+	canceller func()
+}
+
+// IsExpired returns true/false if the context is considered expired.
+func (g *googleContext) IsExpired() bool {
+	select {
+	case <-g.ctx.Done():
+		return true
+	case <-time.After(1 * time.Second):
+		return false
+	}
+}
+
+// Get returns the giving value for the provided key if it exists else nil.
+func (g *googleContext) Get(key interface{}) (interface{}, bool) {
+	val := g.ctx.Value(key)
+	if val == nil {
+		return val, false
+	}
+
+	return val, true
+}
+
+// Done returns a channel which gets closed when the given channel
+// expires else closes immediately if its not an expiring context.
+func (g *googleContext) Done() <-chan struct{} {
+	return g.ctx.Done()
+}
+
+// Err returns the error pertaining to the context Err() method.
+func (g *googleContext) Err() error {
+	return g.ctx.Err()
+}
+
+// Ctx returns a Context which exposes a basic context interface without  the
+// cancellable method.
+func (g *googleContext) Ctx() Context {
+	return g
+}
+
+// New returns a new context based on the fileds of the context which its
+// called from, it does inherits the lifetime limits of the context its
+// called from.
+func (g *googleContext) New(cancelWithParent bool) CancelableContext {
+	return NewGoogleContext(g.ctx)
+}
+
+// WithTimeout returns a new Context from the previous with the given timeout
+// if the timeout is still further than the previous in expiration date else uses
+// the previous expiration date instead since that is still further in the future.
+func (g *googleContext) WithTimeout(timeout time.Duration, cancelWithParent bool) CancelableContext {
+	g.cl.Lock()
+	defer g.cl.Unlock()
+
+	ctx, cancller := gcontext.WithTimeout(g.ctx, timeout)
+
+	var gc googleContext
+	gc.ctx = ctx
+	gc.canceller = cancller
+
+	return &gc
+}
+
+// Set adds a key and value pair into the context store.
+func (g *googleContext) Set(key interface{}, value interface{}) {
+	g.cl.Lock()
+	defer g.cl.Unlock()
+
+	ctx := gcontext.WithValue(g.ctx, key, value)
+	g.ctx = ctx
+}
+
+// SetParent adds a key and value pair into the context store.
+func (g *googleContext) SetParent(key interface{}, value interface{}) {
+	g.cl.Lock()
+	defer g.cl.Unlock()
+
+	ctx := gcontext.WithValue(g.ctx, key, value)
+	g.ctx = ctx
+}
+
+// WithValue returns a new context then adds the key and value pair into the
+// context's store.
+func (g *googleContext) WithValue(key interface{}, value interface{}) CancelableContext {
+	var ctx gcontext.Context
+
+	g.cl.Lock()
+	{
+		ctx = gcontext.WithValue(g.ctx, key, value)
+	}
+	g.cl.Unlock()
+
+	nctx, cancel := gcontext.WithCancel(ctx)
+
+	var gc googleContext
+	gc.ctx = nctx
+	gc.canceller = cancel
+
+	return &gc
+}
+
+// TimeRemaining returns the remaining time for expiring of the context if it
+// indeed has an expiration date set and returns a bool value indicating if it
+// has a timeout.
+func (g *googleContext) TimeRemaining() (remaining time.Duration, hasTimeout bool) {
+	var deadline time.Time
+	var ok bool
+
+	g.cl.Lock()
+	{
+		deadline, ok = g.ctx.Deadline()
+	}
+	g.cl.Unlock()
+
+	return time.Now().Sub(deadline), ok
+}
+
+// Cancel cancels the timer if there exists one set to clear context.
+func (g *googleContext) Cancel() {
+	g.canceller()
+}
+
+//================================================================================
 
 // context defines a struct for bundling a context against specific
 // use cases with a explicitly set duration which clears all its internal

@@ -1,6 +1,7 @@
 package context_test
 
 import (
+	gcontext "context"
 	"sync"
 	"testing"
 	"time"
@@ -8,6 +9,34 @@ import (
 	"github.com/gu-io/gu/tests"
 	"github.com/influx6/faux/context"
 )
+
+func TestGoogleContext(t *testing.T) {
+	ctx := context.NewGoogleContext(gcontext.Background())
+	ctx.Set("brolly", "benzine")
+
+	var wg sync.WaitGroup
+	wg.Add(1)
+
+	go goRoutineContext(t, &wg, ctx.New(true))
+
+	go func() {
+		<-time.After(1 * time.Millisecond)
+		ctx.Cancel()
+	}()
+
+	wg.Wait()
+
+	if !ctx.IsExpired() {
+		tests.Failed(t, "Should have successfully expired context")
+	}
+	tests.Passed(t, "Should have successfully expired context")
+
+	_, hasTime := ctx.TimeRemaining()
+	if hasTime {
+		tests.Failed(t, "Should have time allocated to context")
+	}
+	tests.Passed(t, "Should have time allocated to context")
+}
 
 // TestContextWithConnectedChild tests the validaty of the context.
 func TestContextWithConnectedChild(t *testing.T) {
