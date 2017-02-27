@@ -25,6 +25,23 @@ func TestContextWithConnectedChild(t *testing.T) {
 	}()
 
 	wg.Wait()
+
+	if !ctx.IsExpired() {
+		tests.Failed(t, "Should have successfully expired context")
+	}
+	tests.Passed(t, "Should have successfully expired context")
+
+	rem, hasTime := ctx.TimeRemaining()
+	if hasTime {
+		tests.Failed(t, "Should have time allocated to context")
+	}
+	tests.Passed(t, "Should have time allocated to context")
+
+	if rem != 0 {
+		tests.Failed(t, "Should have successfully used up time")
+	}
+	tests.Passed(t, "Should have successfully used up time")
+
 }
 
 // TestContextWithDisconnectedChild tests the validaty of the context.
