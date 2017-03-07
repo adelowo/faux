@@ -21,7 +21,7 @@ func Passed(message string, val ...interface{}) {
 const failedMark = "\u2717"
 
 // Failed logs the failure message using the giving message and values.
-func Failed(t *testing.T, message string, val ...interface{}) {
+func Failed(message string, val ...interface{}) {
 	if testing.Verbose() {
 		log.Output(2, fmt.Sprintf("\t%s\t %s\n", failedMark, fmt.Sprintf(message, val...)))
 		os.Exit(1)
@@ -29,7 +29,7 @@ func Failed(t *testing.T, message string, val ...interface{}) {
 }
 
 // Errored logs the error message using the giving message and values.
-func Errored(t *testing.T, message string, val ...interface{}) {
+func Errored(message string, val ...interface{}) {
 	if testing.Verbose() {
 		log.Output(2, fmt.Sprintf("\t%s\t %s\n", failedMark, fmt.Sprintf(message, val...)))
 	}
