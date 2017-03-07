@@ -10,6 +10,13 @@ import (
 // succeedMark is the Unicode codepoint for a check mark.
 const succeedMark = "\u2713"
 
+// Info logs the info message using the giving message and values.
+func Info(message string, val ...interface{}) {
+	if testing.Verbose() {
+		log.Output(2, fmt.Sprintf("\t-\t %s\n", fmt.Sprintf(message, val...)))
+	}
+}
+
 // Passed logs the failure message using the giving message and values.
 func Passed(message string, val ...interface{}) {
 	if testing.Verbose() {
