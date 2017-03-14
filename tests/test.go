@@ -33,8 +33,9 @@ const failedMark = "\u2717"
 func Failed(message string, val ...interface{}) {
 	if testing.Verbose() {
 		logger.Output(2, fmt.Sprintf("\t%s\t %s\n", failedMark, fmt.Sprintf(message, val...)))
-		os.Exit(1)
 	}
+
+	os.Exit(1)
 }
 
 // Errored logs the error message using the giving message and values.
